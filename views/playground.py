@@ -57,14 +57,17 @@ def pick_experiments(key: str) -> list[str]:
     if not exps:
         st.info("아직 실험이 없습니다. ① 실행 탭에서 실험을 돌리세요.")
         return []
-    default = [e for e in st.session_state.get("selected_experiments", []) if e in exp_labels] or [exps[0]["experiment_id"]]
+    # ?exp=<실험 ID>(여러 개 가능)로 열면 그 실험을 고른 상태로 시작한다. 링크 공유·데모 녹화용.
+    wanted = st.session_state.get("selected_experiments") or st.query_params.get_all("exp")
+    default = [e for e in wanted if e in exp_labels] or [exps[0]["experiment_id"]]
     return st.multiselect("실험 선택 (여러 개 고르면 합쳐서 비교)", list(exp_labels), default=default,
                           format_func=exp_labels.get, key=key)
 
 
 def add_labels(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
-    multi = df["설정"].nunique() > 1
+    # 같은 방법이 여러 설정으로 돈 경우에만 설정 이름을 붙인다 (코드·에이전트 방법의 설정 이름이 다른 건 구분할 필요 없음).
+    multi = (df.groupby("방법")["설정"].nunique() > 1).any()
     short = df["방법"].str.split().str[0]
     df["label"] = df["방법"] + (" · " + df["설정"] if multi else "")
     df["short"] = short + (" · " + df["설정"] if multi else "")
@@ -73,7 +76,7 @@ def add_labels(df: pd.DataFrame) -> pd.DataFrame:
 
 def hbar(df: pd.DataFrame, value: str, title: str, fmt: str):
     base = alt.Chart(df).encode(
-        y=alt.Y("label:N", sort="-x", title=None),
+        y=alt.Y("label:N", sort="-x", title=None, axis=alt.Axis(labelLimit=220, labelOverlap=False)),
         x=alt.X(f"{value}:Q", title=title),
         tooltip=[alt.Tooltip("label:N", title="방법"), alt.Tooltip(f"{value}:Q", title=title, format=fmt)],
     )

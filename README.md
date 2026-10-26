@@ -3,6 +3,16 @@
 설계안 「문서 파싱 및 LLM 연계 설계 검토 결과」의 **01 문서 파싱 · 02 클래스 매핑 · 03 속성 추출**을 구현한 코드.
 04 정규화 이후는 범위 밖이며, 결과 State의 `next_node`(`04_normalize` / `07_review`)로 넘겨줄 곳만 표시한다.
 
+**파싱·추출 확인** — 블록 위치를 원본 위에 표시, 파서 비교, gpt-6-luna 추출 결과와 근거 위치
+
+![파싱·추출 확인 데모](docs/images/demo_viewer.gif)
+
+**실험 플레이그라운드** — 방법·모델별 정확도·비용·속도 비교, 속성별 분석, 정답 관리
+
+![실험 플레이그라운드 데모](docs/images/demo_playground.gif)
+
+> 화면이 바뀌면 `uv run python scripts/record_demo.py`로 다시 녹화한다 (Windows 기본 Edge 사용, LLM 비용 약 $0.001).
+
 - 파싱: Docling(코드 실행) + 규칙 기반 대체 전략(OCR / 표 설정 변경 / pdfplumber), Excel은 openpyxl
 - LLM: LangChain `ChatOpenAI` + Structured Outputs(JSON Schema strict), 모델 `gpt-6-luna`
 - 흐름 제어: LangGraph `StateGraph`
