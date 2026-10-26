@@ -28,6 +28,7 @@ PDF_STRATEGIES = ["docling", "docling_ocr", "docling_table_alt", "pdfplumber"]
 FALLBACK_RULES: dict[str, list[str]] = {
     "PARSER_EXCEPTION": ["pdfplumber", "docling"],
     "NO_TEXT_LAYER": ["docling_ocr"],
+    "PAGE_NO_TEXT_LAYER": ["docling_ocr"],
     "LOW_TEXT": ["docling_ocr", "pdfplumber"],
     "CONTENT_LOSS": ["pdfplumber", "docling_ocr"],
     "TABLE_MISSING": ["docling_table_alt", "pdfplumber"],
@@ -285,6 +286,12 @@ def quality_check(doc: ParsedDocument, path: Path) -> list[ParseWarning]:
             ws.append(ParseWarning(code="NO_TEXT_LAYER", severity="error",
                                    message="PDF에 텍스트 레이어가 없음 (스캔 문서로 추정)"))
 
+        if layer_chars >= 20 and not ocr_used:
+            for i, t in enumerate(layer, start=1):
+                if not re.sub(r"\s", "", t):
+                    ws.append(ParseWarning(code="PAGE_NO_TEXT_LAYER", page=i,
+                                           message="이 페이지만 텍스트 레이어가 없음 (부분 스캔 의심)"))
+
         by_page: dict[int, list[str]] = {}
         for b in doc.blocks:
             by_page.setdefault(b.page, []).extend(_tokens(b.text))
@@ -370,6 +377,28 @@ def parse_with_strategy(path: str | Path, strategy: str) -> ParsedDocument:
     return doc
 
 
+# 파서·품질 검사 코드를 바꾸면 올려서 이전 캐시를 무효화한다.
+PARSER_VERSION = "2"
+CACHE_DIR = Path(__file__).resolve().parent.parent / ".cache" / "parse"
+
+
+def parse_cached(path: str | Path, strategy: str) -> ParsedDocument:
+    """실험용 디스크 캐시. elapsed_ms는 최초 실행 시간을 그대로 유지하고 from_cache로 구분한다."""
+    path = Path(path)
+    key = CACHE_DIR / f"{make_doc_id(path)}_{strategy}_v{PARSER_VERSION}.json"
+    if key.exists():
+        doc = ParsedDocument.model_validate_json(key.read_text(encoding="utf-8"))
+        doc.source_file = path.name
+        doc.from_cache = True
+        return doc
+    doc = parse_with_strategy(path, strategy)
+    if doc.warnings and doc.warnings[0].code == "PARSER_EXCEPTION":
+        return doc  # 일시적 실패일 수 있으니 캐시하지 않는다.
+    CACHE_DIR.mkdir(parents=True, exist_ok=True)
+    key.write_text(doc.model_dump_json(), encoding="utf-8")
+    return doc
+
+
 def initial_strategy(path: str | Path) -> str:
     return "excel" if Path(path).suffix.lower() in (".xlsx", ".xlsm") else "docling"
 
@@ -394,12 +423,15 @@ def score(doc: ParsedDocument) -> tuple:
     return (-errors, -warns, sum(cov) / len(cov) if cov else 0.0, len(doc.blocks))
 
 
-def parse_document(path: str | Path, strategy: str = "auto") -> tuple[ParsedDocument, list[ParsedDocument]]:
+def parse_document(
+    path: str | Path, strategy: str = "auto", use_cache: bool = False
+) -> tuple[ParsedDocument, list[ParsedDocument]]:
     """단독 실행용. 그래프에서는 같은 규칙을 노드·조건부 엣지로 실행한다."""
+    run = parse_cached if use_cache else parse_with_strategy
     if strategy != "auto":
-        d = parse_with_strategy(path, strategy)
+        d = run(path, strategy)
         return d, [d]
-    attempts = [parse_with_strategy(path, initial_strategy(path))]
+    attempts = [run(path, initial_strategy(path))]
     while (s := next_strategy(attempts[-1], [a.parser for a in attempts])) is not None:
-        attempts.append(parse_with_strategy(path, s))
+        attempts.append(run(path, s))
     return max(attempts, key=score), attempts

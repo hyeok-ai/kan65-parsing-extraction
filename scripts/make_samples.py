@@ -5,11 +5,13 @@ uv run python scripts/make_samples.py
 
 from __future__ import annotations
 
+from datetime import datetime
 from pathlib import Path
 
 import openpyxl
 import pypdfium2 as pdfium
 from openpyxl.styles import Alignment, Font
+from reportlab import rl_config
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle
@@ -17,6 +19,8 @@ from reportlab.lib.units import mm
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.platypus import PageBreak, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+
+rl_config.invariant = 1  # 생성 시각을 넣지 않아 다시 만들어도 같은 파일이 나오게 한다.
 
 OUT = Path(__file__).resolve().parent.parent / "samples"
 FONT = "Malgun"
@@ -143,7 +147,8 @@ def bearing_scan():
     pdf = pdfium.PdfDocument(str(src))
     img = pdf[0].render(scale=200 / 72).to_pil().convert("L").rotate(0.4, fillcolor=255, expand=False)
     pdf.close()
-    img.save(OUT / "bearing_scan.pdf", "PDF", resolution=200)
+    fixed = datetime(2026, 1, 1)
+    img.save(OUT / "bearing_scan.pdf", "PDF", resolution=200, creationDate=fixed, modDate=fixed)
     src.unlink()
 
 
@@ -175,6 +180,73 @@ def motor_xlsx():
     wb.save(OUT / "servo_motor_spec.xlsx")
 
 
+def gear_motor_image_table():
+    """텍스트 레이어는 있지만 사양표만 이미지로 붙은 문서. 텍스트 품질 검사로는 문제가 안 보인다."""
+    src = OUT / "_table_src.pdf"
+    build(src, [grid([["항목", "값"],
+                      ["모델명", "GM-90K"],
+                      ["정격 전압", "220 V"],
+                      ["정격 출력", "90 W"],
+                      ["정격 회전수", "1,450 rpm"],
+                      ["정격 토크", "0.59 N·m"],
+                      ["중량", "2.4 kg"]], [55 * mm, 105 * mm])])
+    pdf = pdfium.PdfDocument(str(src))
+    page = pdf[0].render(scale=200 / 72).to_pil().convert("RGB")
+    pdf.close()
+    src.unlink()
+    gray = page.convert("L").point(lambda v: 255 if v > 245 else 0)
+    png = OUT / "_table.png"
+    page.crop(gray.getbbox()).save(png)
+
+    from reportlab.platypus import Image as RLImage
+
+    crop = page.crop(gray.getbbox())
+    img = RLImage(str(png), width=120 * mm, height=120 * mm * crop.height / crop.width)
+    build(OUT / "gear_motor_image_table.pdf", [
+        Paragraph("GM-90K 소형 기어드 모터", H1),
+        Paragraph("제조사: 한결모터 &nbsp; | &nbsp; 감속비 1/30 기어헤드 일체형", P),
+        Paragraph("포장 설비 및 소형 컨베이어 구동용 단상 유도 기어드 모터이다. "
+                  "상세 사양은 아래 표(스캔 이미지)를 참조한다.", P),
+        Paragraph("사양표", H2),
+        img,
+    ])
+    png.unlink()
+
+
+def bolt_rotated():
+    """90° 회전 페이지. Docling이 텍스트를 하나도 못 뽑는 경우."""
+    story = [
+        Paragraph("Flange Bolt 플랜지볼트 FB-1040 사양서", H1),
+        Paragraph("Maker: 대한체결(주)", P),
+        Paragraph("주요 사양", H2),
+        grid([["항목", "값"],
+              ["품번", "FB-1040"],
+              ["나사 호칭", "M10 × 1.5"],
+              ["길이", "40 mm"],
+              ["재질", "SCM435"],
+              ["강도 구분", "10.9"],
+              ["표면 처리", "흑색 산화피막"]], [60 * mm, 100 * mm]),
+    ]
+    SimpleDocTemplate(str(OUT / "bolt_rotated.pdf"), pagesize=A4, leftMargin=20 * mm,
+                      rightMargin=20 * mm, topMargin=18 * mm, bottomMargin=18 * mm).build(
+        story, onFirstPage=lambda c, d: c.setPageRotation(90))
+
+
+def pump_spec():
+    """온톨로지 후보(모터·볼트·케이블·베어링)에 없는 제품. class_id가 null이어야 한다."""
+    build(OUT / "pump_spec.pdf", [
+        Paragraph("CP-150 원심 펌프 사양서", H1),
+        Paragraph("제조사: 청류펌프 &nbsp; | &nbsp; 냉각수 순환용 단단 원심 펌프", P),
+        Paragraph("주요 사양", H2),
+        grid([["항목", "값"],
+              ["토출량", "150 L/min"],
+              ["전양정", "25 m"],
+              ["구동 전동기", "1.5 kW, 3상 380 V"],
+              ["흡입·토출 구경", "40A / 32A"],
+              ["케이싱 재질", "FC200"]], [60 * mm, 100 * mm]),
+    ])
+
+
 if __name__ == "__main__":
     OUT.mkdir(exist_ok=True)
     motor()
@@ -182,4 +254,7 @@ if __name__ == "__main__":
     cable()
     bearing_scan()
     motor_xlsx()
+    gear_motor_image_table()
+    bolt_rotated()
+    pump_spec()
     print("생성:", sorted(p.name for p in OUT.iterdir()))

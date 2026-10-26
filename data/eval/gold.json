@@ -1,0 +1,95 @@
+{
+  "_note": "샘플 사양서 정답. 값은 허용 표기 목록이며 null은 '원문에 없음(추출하면 안 됨)'. 비교 시 공백·쉼표·NFKC·대소문자 차이는 무시하고 raw_value+raw_unit을 붙여 비교한다.",
+  "motor_spec.pdf": {
+    "class_id": "ex:Motor",
+    "attributes": {
+      "ex:modelNumber": ["DM-600"],
+      "ex:manufacturer": ["XYZ Motors"],
+      "ex:ratedVoltage": ["24 V"],
+      "ex:ratedPower": ["0.6 kW"],
+      "ex:ratedSpeed": ["3,000 rpm"],
+      "ex:ratedTorque": ["1.91 N·m"],
+      "ex:weight": ["1.8 kg"]
+    }
+  },
+  "bolt_spec.pdf": {
+    "class_id": "ex:Bolt",
+    "attributes": {
+      "ex:modelNumber": ["HB-0830"],
+      "ex:manufacturer": ["대한체결(주) / Daehan Fastening Co.", "대한체결(주)", "Daehan Fastening Co."],
+      "ex:threadSize": ["M8 × 1.25", "M8x1.25"],
+      "ex:length": ["30 mm"],
+      "ex:material": ["STS304"],
+      "ex:strengthClass": ["A2-70"],
+      "ex:surfaceTreatment": ["무처리"],
+      "ex:weight": ["15 g/ea", "15 g"]
+    }
+  },
+  "cable_spec.pdf": {
+    "class_id": "ex:Cable",
+    "attributes": {
+      "ex:modelNumber": ["HFIX-2.5SQ"],
+      "ex:manufacturer": ["한빛전선"],
+      "ex:conductorCrossSection": ["2.5 mm²", "2.5 mm2"],
+      "ex:numberOfCores": ["단심", "1"],
+      "ex:ratedVoltage": ["450/750 V"],
+      "ex:maxOperatingTemperature": ["90 °C (상시)", "90 °C"],
+      "ex:sheathMaterial": [null, "HF-PO"],
+      "ex:outerDiameter": ["약 3.6 mm", "3.6 mm"]
+    }
+  },
+  "bearing_scan.pdf": {
+    "class_id": "ex:Bearing",
+    "attributes": {
+      "ex:modelNumber": ["6204ZZ"],
+      "ex:manufacturer": ["세진베어링"],
+      "ex:innerDiameter": ["20 mm"],
+      "ex:outerDiameter": ["47 mm"],
+      "ex:width": ["14 mm"],
+      "ex:dynamicLoadRating": ["12.8 kN"],
+      "ex:staticLoadRating": ["6.65 kN"],
+      "ex:limitingSpeed": ["15,000 rpm"]
+    }
+  },
+  "servo_motor_spec.xlsx": {
+    "class_id": "ex:Motor",
+    "attributes": {
+      "ex:modelNumber": ["SM-200"],
+      "ex:manufacturer": ["누리모션"],
+      "ex:ratedVoltage": ["220 V"],
+      "ex:ratedPower": ["200 W"],
+      "ex:ratedSpeed": ["3000 rpm"],
+      "ex:ratedTorque": ["0.64 N·m"],
+      "ex:weight": ["0.82 kg"]
+    }
+  },
+  "gear_motor_image_table.pdf": {
+    "class_id": "ex:Motor",
+    "attributes": {
+      "ex:modelNumber": ["GM-90K"],
+      "ex:manufacturer": ["한결모터"],
+      "ex:ratedVoltage": ["220 V"],
+      "ex:ratedPower": ["90 W"],
+      "ex:ratedSpeed": ["1,450 rpm"],
+      "ex:ratedTorque": ["0.59 N·m"],
+      "ex:weight": ["2.4 kg"]
+    }
+  },
+  "bolt_rotated.pdf": {
+    "class_id": "ex:Bolt",
+    "attributes": {
+      "ex:modelNumber": ["FB-1040"],
+      "ex:manufacturer": ["대한체결(주)"],
+      "ex:threadSize": ["M10 × 1.5", "M10x1.5"],
+      "ex:length": ["40 mm"],
+      "ex:material": ["SCM435"],
+      "ex:strengthClass": ["10.9"],
+      "ex:surfaceTreatment": ["흑색 산화피막"],
+      "ex:weight": [null]
+    }
+  },
+  "pump_spec.pdf": {
+    "class_id": null,
+    "attributes": {}
+  }
+}

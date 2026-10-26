@@ -19,6 +19,8 @@ dependencies = [
     "langgraph>=0.4",
     "streamlit>=1.40",
     "reportlab>=4.2",
+    "docling-mcp>=3.3.0",
+    "langchain>=1.0",
 ]
 
 [build-system]

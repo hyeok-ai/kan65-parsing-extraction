@@ -63,6 +63,7 @@ class ParsedDocument(BaseModel):
     blocks: list[Block] = []
     warnings: list[ParseWarning] = []
     elapsed_ms: int | None = None
+    from_cache: bool = False
 
     def block_map(self) -> dict[str, Block]:
         return {b.block_id: b for b in self.blocks}

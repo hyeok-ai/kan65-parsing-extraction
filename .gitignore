@@ -6,9 +6,12 @@ __pycache__/
 # 비밀 정보
 .env
 
-# 실행 결과·업로드
+# 실행 결과·업로드·캐시
 out/
 uploads/
+samples/_*
+runs/
+.cache/
 
 # 개인 도구 설정
 .claude/

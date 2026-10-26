@@ -189,7 +189,10 @@ def build_graph(ontology: OntologySource | None = None):
         for i in state.get("extraction_issues", []):
             reasons.append(f"03 {i['code']} [{i.get('property_id')}]: {i['message']}")
 
-        blocking = parsed.get("status") == "failed" or not ex
+        # 클래스 후보가 없어 03을 건너뛴 것은 정상 판단이므로 실패가 아니라 검토 대상이다.
+        llm_error = any(i["code"] == "LLM_ERROR"
+                        for i in state.get("class_issues", []) + state.get("extraction_issues", []))
+        blocking = parsed.get("status") == "failed" or llm_error
         return {
             "review_reasons": reasons,
             "status": "failed" if blocking else ("needs_review" if reasons else "extracted"),
