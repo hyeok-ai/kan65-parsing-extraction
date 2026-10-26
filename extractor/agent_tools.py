@@ -7,6 +7,7 @@
 from __future__ import annotations
 
 import json
+import os
 import time
 from pathlib import Path
 
@@ -23,15 +24,18 @@ STRATEGY_HELP = {
     "excel": "Excel 전용(openpyxl)",
 }
 FULL_TEXT_BUDGET = 6000  # parse_document가 블록 전문을 그대로 돌려주는 최대 글자 수
+CACHE_ENV = "EXTRACT_PARSE_CACHE"  # "0"이면 파싱 캐시를 읽지 않는다
 
 
 class DocumentWorkspace:
     """한 문서에 대한 파싱 결과와 도구 호출 기록."""
 
-    def __init__(self, path: str | Path, ontology: OntologySource | None = None):
+    def __init__(self, path: str | Path, ontology: OntologySource | None = None, use_cache: bool | None = None):
         self.path = Path(path)
         self.is_excel = self.path.suffix.lower() in (".xlsx", ".xlsm")
         self.ontology = ontology or JsonOntology()
+        # MCP 서버 프로세스에는 환경변수로 전달된다.
+        self.use_cache = os.environ.get(CACHE_ENV, "1") != "0" if use_cache is None else use_cache
         self.docs: dict[str, ParsedDocument] = {}
         self.trace: list[dict] = []
 
@@ -39,9 +43,10 @@ class DocumentWorkspace:
     def strategies(self) -> list[str]:
         return ["excel"] if self.is_excel else PDF_STRATEGIES
 
-    def get_doc(self, strategy: str) -> ParsedDocument:
+    def get_doc(self, strategy: str, read_cache: bool | None = None) -> ParsedDocument:
         if strategy not in self.docs:
-            self.docs[strategy] = parse_cached(self.path, strategy)
+            read = self.use_cache if read_cache is None else read_cache
+            self.docs[strategy] = parse_cached(self.path, strategy, read=read)
         return self.docs[strategy]
 
     def _record(self, name: str, args: dict, out: str, t0: float, extra: dict | None = None) -> str:
@@ -56,9 +61,11 @@ class DocumentWorkspace:
         if strategy not in self.strategies:
             return self._record("parse_document", {"strategy": strategy},
                                 f"사용할 수 없는 전략. 가능: {self.strategies}", t0)
+        load = "reused" if strategy in self.docs else "new"
         doc = self.get_doc(strategy)
+        # 첫 줄의 parse_ms·cache·load는 실험 시간 집계(lab.parse_cost)가 읽는다. MCP로 호출해도 같다.
         lines = [f"strategy={strategy} status={doc.status} blocks={len(doc.blocks)} "
-                 f"parse_ms={doc.elapsed_ms}"]
+                 f"parse_ms={doc.elapsed_ms} cache={'hit' if doc.from_cache else 'miss'} load={load}"]
         cov = [f"p{p.page}:{p.coverage:.0%}" for p in doc.pages if p.coverage is not None]
         if cov:
             lines.append("텍스트 레이어 포함률: " + ", ".join(cov))
@@ -70,8 +77,7 @@ class DocumentWorkspace:
         for b in doc.blocks:
             text = b.text if full else b.text[:100].replace("\n", " / ")
             lines.append(f"- {b.block_id} p{b.page} {b.type}: {text}")
-        extra = {"parse_ms": doc.elapsed_ms, "from_cache": doc.from_cache}
-        return self._record("parse_document", {"strategy": strategy}, "\n".join(lines), t0, extra)
+        return self._record("parse_document", {"strategy": strategy}, "\n".join(lines), t0)
 
     def read_blocks(self, strategy: str, block_ids: list[str]) -> str:
         t0 = time.perf_counter()

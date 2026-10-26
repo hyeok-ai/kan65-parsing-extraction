@@ -39,7 +39,19 @@ uv run python -m extractor.lab run --methods code_single,code_rules,code_agent,a
 ```
 
 ```bash
+uv run python -m extractor.lab run --methods code_rules,code_rules_agent --models gpt-6-luna,gpt-6.1-sol --extract-efforts low,medium --repeats 3 --name luna-vs-sol
+```
+
+```bash
+uv run python -m extractor.lab run --methods code_rules,code_rules_agent,agent_tools,agent_mcp_custom --speed --name speed
+```
+
+```bash
 uv run python -m extractor.lab summary 20261026-163329_baseline-luna
+```
+
+```bash
+uv run python -m extractor.lab report 20261026-163329_baseline-luna > report.md
 ```
 
 ```bash
@@ -97,6 +109,23 @@ uv run --with pytest pytest -q
 - 파싱 결과는 `.cache/parse/`에 캐시한다. 처리 시간은 캐시를 썼더라도 최초 파싱 시간을 더해 추정한다.
   (G는 MCP 서버가 직접 변환하므로 캐시를 쓰지 않는다)
 - 정답이 없는 문서도 돌릴 수 있다(비용·시간만 기록). 문서를 늘리려면 `samples/`에 넣고 `gold.json`에 정답을 추가한다.
+
+### 플레이그라운드 기능
+
+| 탭 | 하는 일 |
+|---|---|
+| ① 실행 | 문서·방법·**모델·effort 조합**(여러 개 고르면 모든 조합)·반복·도구 호출 한도 선택. 지난 기록으로 **예상 비용·시간**을 미리 보여 준다 |
+| ② 결과 비교 | 방법·설정별 요약, 정확도·비용·토큰 차트, 정확도 대비 비용, 문서×방법 정확도, **Markdown 보고서** 다운로드 |
+| ③ 속도 | p50·p95·최대 처리 시간, **단계별 시간**(파싱·LLM·도구·MCP 기동·기타), 실행별 분포 |
+| ④ 속성·일관성 | 속성×방법 정답률(어느 속성을 자주 놓치는지), **반복 일관성**(같은 설정의 결과 흔들림) |
+| ⑤ 실행 상세 | 속성별 예측 vs 정답, 근거, 검토 사유, LLM·도구 호출 기록, 시간 구성 |
+| ⑥ 정답 관리 | 문서 추가 → 실행 결과로 미리 채우기 → 고쳐서 `gold.json` 저장. 지난 실험도 새 정답으로 다시 채점 |
+| ⑦ 과금 시뮬레이션 | 월 처리량 × 모델 단가 |
+
+- **속도 측정 모드**(`--speed`): 파싱 캐시를 읽지 않고 실제로 파싱, 동시 실행 1, 시작 전 Docling 모델 워밍업.
+  일반 모드는 캐시·동시 실행 때문에 시간 비교가 부정확하니 시간은 이 모드 결과로 비교한다.
+- A·B는 에이전트 설정과 무관하므로 에이전트 모델·effort를 여러 개 골라도 02·03 설정별로 한 번만 돈다.
+- 실행 기록에는 예측값이 남고 채점은 불러올 때마다 다시 하므로, 정답을 고쳐도 실험을 다시 돌릴 필요가 없다.
 
 > `langchain-mcp-adapters` 0.3.x는 `mcp` 1.x 전용이고 `docling-mcp` 3.x는 `mcp` 2.x를 요구해 함께 설치할 수 없다.
 > 그래서 `mcp_client.py`에서 mcp 2.x 클라이언트로 직접 감쌌다.

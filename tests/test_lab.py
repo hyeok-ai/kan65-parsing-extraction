@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from extractor.agent import AgentAttribute, AgentEvidence, AgentResult, validate_agent_result
 from extractor.agent_tools import DocumentWorkspace
-from extractor.lab import _merge_fallback, evaluate
+from extractor.lab import _merge_fallback, consistency_summary, evaluate, parse_cost, timing_breakdown
 from extractor.schemas import Block, ParsedDocument
 
 GOLD = {"class_id": "ex:Motor", "attributes": {
@@ -82,3 +82,37 @@ def test_property_definitions_are_not_treated_as_document_text(tmp_path):
                                   AgentAttribute(property_id="ex:weight", raw_value=None, raw_unit=None, evidence=None)])
     _, _, issues = validate_agent_result(res, ws)
     assert ("VALUE_POSSIBLY_MISSED", "ex:weight") not in {(i.code, i.property_id) for i in issues}
+
+
+def _pd(strategy, ms, cache, load, tool_ms):
+    return {"tool": "parse_document", "args": {"strategy": strategy}, "ms": tool_ms,
+            "output_preview": f"strategy={strategy} status=success blocks=3 parse_ms={ms} cache={cache} load={load}\n..."}
+
+
+def test_parse_cost_counts_each_strategy_once():
+    calls = [_pd("docling", 5000, "hit", "new", 2), _pd("docling_ocr", 9000, "miss", "new", 9100),
+             _pd("docling", 5000, "hit", "reused", 1)]
+    strategies, parse_ms, saved = parse_cost(calls)
+    assert strategies == ["docling", "docling_ocr"]
+    assert parse_ms == 14000 and saved == 5000  # 캐시 적중분만 '아낀 시간'
+
+
+def test_timing_breakdown_does_not_double_count_parsing():
+    rec = {"parse_ms": 14000, "est_ms": 30000,
+           "model_calls": [{"latency_ms": 4000}, {"latency_ms": 6000}],
+           "tool_calls": [{"tool": "(mcp server startup)", "ms": 2000},
+                          _pd("docling_ocr", 9000, "miss", "new", 9100),   # 파싱 단계에 이미 포함
+                          {"tool": "read_blocks", "ms": 300}]}
+    t = timing_breakdown(rec)
+    assert (t["파싱"], t["LLM"], t["도구"], t["MCP 기동"]) == (14000, 10000, 300, 2000)
+    assert t["기타"] == 30000 - 14000 - 10000 - 300 - 2000
+
+
+def test_consistency_detects_changing_values():
+    def r(rep, val):
+        return {"method": "code_agent", "variant": "v", "sample": "a.pdf", "repeat": rep, "status": "needs_review",
+                "eval": {"attr_accuracy": 1.0 if val == "24 V" else 0.5,
+                         "details": {"ex:ratedVoltage": {"pred": val}, "ex:weight": {"pred": None}}}}
+    agg, detail = consistency_summary([r(0, "24 V"), r(1, "24 V"), r(2, None)])
+    assert detail.iloc[0]["속성값 일치율"] == 0.5   # 전압은 흔들리고 중량은 일정
+    assert agg.iloc[0]["최대 정확도 차이"] == 0.5

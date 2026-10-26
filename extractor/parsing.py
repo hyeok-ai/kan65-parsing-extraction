@@ -382,11 +382,14 @@ PARSER_VERSION = "2"
 CACHE_DIR = Path(__file__).resolve().parent.parent / ".cache" / "parse"
 
 
-def parse_cached(path: str | Path, strategy: str) -> ParsedDocument:
-    """실험용 디스크 캐시. elapsed_ms는 최초 실행 시간을 그대로 유지하고 from_cache로 구분한다."""
+def parse_cached(path: str | Path, strategy: str, read: bool = True) -> ParsedDocument:
+    """실험용 디스크 캐시. elapsed_ms는 최초 실행 시간을 그대로 유지하고 from_cache로 구분한다.
+
+    read=False이면 캐시를 읽지 않고 새로 파싱하되 결과는 캐시에 쓴다. (속도 측정 모드)
+    """
     path = Path(path)
     key = CACHE_DIR / f"{make_doc_id(path)}_{strategy}_v{PARSER_VERSION}.json"
-    if key.exists():
+    if read and key.exists():
         doc = ParsedDocument.model_validate_json(key.read_text(encoding="utf-8"))
         doc.source_file = path.name
         doc.from_cache = True
@@ -427,7 +430,9 @@ def parse_document(
     path: str | Path, strategy: str = "auto", use_cache: bool = False
 ) -> tuple[ParsedDocument, list[ParsedDocument]]:
     """단독 실행용. 그래프에서는 같은 규칙을 노드·조건부 엣지로 실행한다."""
-    run = parse_cached if use_cache else parse_with_strategy
+    def run(p, s):
+        return parse_cached(p, s, read=use_cache)
+
     if strategy != "auto":
         d = run(path, strategy)
         return d, [d]

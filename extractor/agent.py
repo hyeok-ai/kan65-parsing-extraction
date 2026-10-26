@@ -225,7 +225,7 @@ async def arun_mcp_agent(ws: DocumentWorkspace, cfg: AgentConfig, server: str) -
 
     from .mcp_client import docling_mcp_params, mcp_tools, product_mcp_params
 
-    params = docling_mcp_params() if server == "docling" else product_mcp_params(ws.path)
+    params = docling_mcp_params() if server == "docling" else product_mcp_params(ws.path, ws.use_cache)
     t0 = time.perf_counter()
     async with mcp_tools(params, ws.trace) as (tools, startup_ms):
         if server == "docling":
@@ -260,7 +260,7 @@ def _to_evidence(ev: AgentEvidence | None, ws: DocumentWorkspace) -> Evidence | 
     if ev.source == "mcp":
         return Evidence(block_id="mcp:all", page=0, text=ev.text)
     if ev.source in ws.strategies:
-        ws.get_doc(ev.source)  # MCP 서버에서 파싱한 경우에도 캐시에서 불러와 검증한다.
+        ws.get_doc(ev.source, read_cache=True)  # MCP 서버가 파싱했어도 캐시에서 불러와 검증한다.
     page = ev.page
     doc = ws.docs.get(ev.source)
     if doc and (b := doc.block_map().get(ev.block_id)):

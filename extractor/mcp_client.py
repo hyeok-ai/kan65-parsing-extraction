@@ -34,10 +34,13 @@ def docling_mcp_params() -> StdioServerParameters:
     )
 
 
-def product_mcp_params(path: str | Path) -> StdioServerParameters:
+def product_mcp_params(path: str | Path, use_cache: bool = True) -> StdioServerParameters:
+    from .agent_tools import CACHE_ENV
+
     root = Path(__file__).resolve().parent.parent
+    env = {**os.environ, "PYTHONIOENCODING": "utf-8", CACHE_ENV: "1" if use_cache else "0"}
     return StdioServerParameters(command=sys.executable, args=["-m", "extractor.mcp_server", str(Path(path).resolve())],
-                                 env={**os.environ, "PYTHONIOENCODING": "utf-8"}, cwd=str(root))
+                                 env=env, cwd=str(root))
 
 
 def _result_text(res) -> str:
