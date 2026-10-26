@@ -50,6 +50,11 @@ def _clean(s: str | None) -> str:
     return unicodedata.normalize("NFC", str(s)).strip()
 
 
+def _norm_bbox(l: float, t: float, r: float, b: float) -> list[float]:
+    """좌표 순서를 [left, top, right, bottom]으로 보장한다. (회전 페이지·다단 배치 등에서 뒤집힐 수 있음)"""
+    return [round(min(l, r), 1), round(min(t, b), 1), round(max(l, r), 1), round(max(t, b), 1)]
+
+
 def _rows_to_text(rows: list[list[str]]) -> str:
     return "\n".join(" | ".join(c.replace("\n", " ") for c in r) for r in rows)
 
@@ -127,7 +132,7 @@ def _parse_docling(path: Path, strategy: str) -> tuple[list[Block], list[PageInf
             prov = item.prov[0]
             page_no = prov.page_no
             bb = prov.bbox.to_top_left_origin(page_height=heights[page_no])
-            bbox = [round(bb.l, 1), round(bb.t, 1), round(bb.r, 1), round(bb.b, 1)]
+            bbox = _norm_bbox(bb.l, bb.t, bb.r, bb.b)
         blocks.append(
             Block(
                 block_id=f"B{len(blocks) + 1}",
@@ -171,7 +176,7 @@ def _parse_pdfplumber(path: Path) -> tuple[list[Block], list[PageInfo]]:
                     x0, top, x1, bottom = t.bbox
                     items.append(
                         (top, Block(block_id="", page=pno, type="table", text=_rows_to_text(rows),
-                                    rows=rows, bbox=[x0, top, x1, bottom], label="table"))
+                                    rows=rows, bbox=_norm_bbox(x0, top, x1, bottom), label="table"))
                     )
 
             outside = page.filter(lambda o: o.get("object_type") != "char" or not _inside(o, tboxes))
@@ -182,10 +187,10 @@ def _parse_pdfplumber(path: Path) -> tuple[list[Block], list[PageInfo]]:
                 if not para:
                     return
                 text = "\n".join(_clean(ln["text"]) for ln in para)
-                bbox = [min(l["x0"] for l in para), para[0]["top"],
-                        max(l["x1"] for l in para), para[-1]["bottom"]]
+                bbox = _norm_bbox(min(l["x0"] for l in para), min(l["top"] for l in para),
+                                  max(l["x1"] for l in para), max(l["bottom"] for l in para))
                 items.append((bbox[1], Block(block_id="", page=pno, type="text", text=text,
-                                             bbox=[round(v, 1) for v in bbox], label="text_lines")))
+                                             bbox=bbox, label="text_lines")))
                 para.clear()
 
             for ln in lines:

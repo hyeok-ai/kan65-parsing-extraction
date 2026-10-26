@@ -59,7 +59,8 @@ def draw_overlay(
         if dim_others and highlight and not hl:
             continue
         color = HIGHLIGHT if hl else TYPE_COLORS.get(b.type, TYPE_COLORS["other"])
-        l, t, r, btm = (v * scale for v in b.bbox)
+        x0, y0, x1, y1 = (v * scale for v in b.bbox)
+        l, t, r, btm = min(x0, x1), min(y0, y1), max(x0, x1), max(y0, y1)
         d.rectangle([l, t, r, btm], outline=color + (255,), fill=color + (60 if hl else 28,),
                     width=4 if hl else 2)
         # 라벨은 오른쪽 위 바깥에 붙여 원문 글자를 가리지 않게 한다.
