@@ -1,0 +1,68 @@
+{
+  "_note": "온톨로지 담당과 확정 전 임시 정의. 클래스 IRI·속성·필수 여부는 설명용 가정값이다.",
+  "classes": [
+    {
+      "id": "ex:Motor",
+      "label": "모터",
+      "description": "전기 에너지를 회전 운동으로 바꾸는 전동기 (BLDC, AC 유도, 스테핑 등)",
+      "synonyms": ["전동기", "Motor", "BLDC", "서보모터"],
+      "properties": [
+        {"id": "ex:modelNumber", "label": "모델명", "datatype": "string", "required": true, "synonyms": ["품번", "Model", "Part No."]},
+        {"id": "ex:manufacturer", "label": "제조사", "datatype": "string", "required": false, "synonyms": ["Maker", "Manufacturer"]},
+        {"id": "ex:ratedVoltage", "label": "정격 전압", "datatype": "decimal", "required": true, "target_unit": "V", "synonyms": ["Rated Voltage", "정격전압"]},
+        {"id": "ex:ratedPower", "label": "정격 출력", "datatype": "decimal", "required": true, "target_unit": "W", "synonyms": ["Rated Power", "Output", "정격출력"]},
+        {"id": "ex:ratedSpeed", "label": "정격 회전수", "datatype": "decimal", "required": false, "target_unit": "rpm", "synonyms": ["Rated Speed", "정격 속도"]},
+        {"id": "ex:ratedTorque", "label": "정격 토크", "datatype": "decimal", "required": false, "target_unit": "N·m", "synonyms": ["Rated Torque"], "description": "최대(순간) 토크가 아닌 정격 토크"},
+        {"id": "ex:weight", "label": "중량", "datatype": "decimal", "required": false, "target_unit": "kg", "synonyms": ["무게", "Weight", "Mass"]}
+      ]
+    },
+    {
+      "id": "ex:Bolt",
+      "label": "볼트",
+      "description": "나사산이 있어 너트나 암나사와 결합하는 체결용 부품",
+      "synonyms": ["Bolt", "육각볼트", "Hex Bolt", "스크류"],
+      "properties": [
+        {"id": "ex:modelNumber", "label": "모델명", "datatype": "string", "required": true, "synonyms": ["품번", "Part No."]},
+        {"id": "ex:manufacturer", "label": "제조사", "datatype": "string", "required": false, "synonyms": ["Maker"]},
+        {"id": "ex:threadSize", "label": "나사 호칭", "datatype": "string", "required": true, "synonyms": ["Thread", "호칭경", "규격"], "description": "예: M8, M8x1.25"},
+        {"id": "ex:length", "label": "길이", "datatype": "decimal", "required": true, "target_unit": "mm", "synonyms": ["Length", "L"]},
+        {"id": "ex:material", "label": "재질", "datatype": "string", "required": true, "synonyms": ["Material", "소재"]},
+        {"id": "ex:strengthClass", "label": "강도 등급", "datatype": "string", "required": false, "synonyms": ["Property Class", "강도구분"]},
+        {"id": "ex:surfaceTreatment", "label": "표면 처리", "datatype": "string", "required": false, "synonyms": ["Finish", "도금"]},
+        {"id": "ex:weight", "label": "중량", "datatype": "decimal", "required": false, "target_unit": "kg", "synonyms": ["무게", "Weight"]}
+      ]
+    },
+    {
+      "id": "ex:Cable",
+      "label": "케이블",
+      "description": "전력 또는 신호를 전달하는 전기 연결용 케이블",
+      "synonyms": ["Cable", "전선", "Wire"],
+      "properties": [
+        {"id": "ex:modelNumber", "label": "모델명", "datatype": "string", "required": true, "synonyms": ["품번", "Part No."]},
+        {"id": "ex:manufacturer", "label": "제조사", "datatype": "string", "required": false, "synonyms": ["Maker"]},
+        {"id": "ex:conductorCrossSection", "label": "도체 단면적", "datatype": "decimal", "required": true, "target_unit": "mm2", "synonyms": ["공칭 단면적", "Cross Section", "SQ"]},
+        {"id": "ex:numberOfCores", "label": "심선 수", "datatype": "integer", "required": true, "synonyms": ["코어 수", "Cores"]},
+        {"id": "ex:ratedVoltage", "label": "정격 전압", "datatype": "decimal", "required": true, "target_unit": "V", "synonyms": ["Rated Voltage"]},
+        {"id": "ex:maxOperatingTemperature", "label": "최고 허용 온도", "datatype": "decimal", "required": false, "target_unit": "°C", "synonyms": ["Max. Temperature", "최고 사용 온도"]},
+        {"id": "ex:sheathMaterial", "label": "시스 재질", "datatype": "string", "required": false, "synonyms": ["Sheath", "외피 재질"]},
+        {"id": "ex:outerDiameter", "label": "외경", "datatype": "decimal", "required": false, "target_unit": "mm", "synonyms": ["Outer Diameter", "OD"]}
+      ]
+    },
+    {
+      "id": "ex:Bearing",
+      "label": "베어링",
+      "description": "회전축을 지지하고 마찰을 줄이는 부품",
+      "synonyms": ["Bearing", "볼베어링", "롤러베어링"],
+      "properties": [
+        {"id": "ex:modelNumber", "label": "모델명", "datatype": "string", "required": true, "synonyms": ["호칭 번호", "Part No."]},
+        {"id": "ex:manufacturer", "label": "제조사", "datatype": "string", "required": false, "synonyms": ["Maker"]},
+        {"id": "ex:innerDiameter", "label": "내경", "datatype": "decimal", "required": true, "target_unit": "mm", "synonyms": ["d", "Bore"]},
+        {"id": "ex:outerDiameter", "label": "외경", "datatype": "decimal", "required": true, "target_unit": "mm", "synonyms": ["D", "OD"]},
+        {"id": "ex:width", "label": "폭", "datatype": "decimal", "required": true, "target_unit": "mm", "synonyms": ["B", "Width"]},
+        {"id": "ex:dynamicLoadRating", "label": "기본 동정격하중", "datatype": "decimal", "required": false, "target_unit": "kN", "synonyms": ["Cr", "Dynamic Load Rating"]},
+        {"id": "ex:staticLoadRating", "label": "기본 정정격하중", "datatype": "decimal", "required": false, "target_unit": "kN", "synonyms": ["Cor", "Static Load Rating"]},
+        {"id": "ex:limitingSpeed", "label": "한계 회전수", "datatype": "decimal", "required": false, "target_unit": "rpm", "synonyms": ["Limiting Speed"]}
+      ]
+    }
+  ]
+}

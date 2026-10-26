@@ -1,0 +1,14 @@
+.venv/
+__pycache__/
+.pytest_cache/
+*.egg-info/
+
+# 비밀 정보
+.env
+
+# 실행 결과·업로드
+out/
+uploads/
+
+# 개인 도구 설정
+.claude/
